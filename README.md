@@ -1,4 +1,4 @@
-# SonicEDC · Sileo repository
+# Sonicedc · Sileo repository
 
 A static APT repository and responsive package catalog, hosted at **https://sonicedc.github.io/**.
 
