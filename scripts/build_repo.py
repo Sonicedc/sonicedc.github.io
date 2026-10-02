@@ -90,7 +90,7 @@ def main():
         text = fields['Description'].split('\n')[0]
         if is_carcanvas:
             text += '\n\nCustomize your CarPlay dashboard, cards, dock, appearance, and status bar from Settings.\n\nRequires a compatible rootless jailbreak on iOS 16.2. Dependencies: ElleKit and PreferenceLoader. This is an in-development release.'
-        depiction_json = {'class': 'DepictionTabView', 'minVersion': '0.1', 'tintColor': '#158C78', 'tabs': [
+        depiction_json = {'class': 'DepictionTabView', 'minVersion': '0.1', 'tintColor': '#9B72CF', 'tabs': [
             {'class': 'DepictionStackView', 'tabname': 'Details', 'views': [
                 {'class': 'DepictionHeaderView', 'title': fields['Name']},
                 {'class': 'DepictionMarkdownView', 'markdown': text, 'useSpacing': True},
