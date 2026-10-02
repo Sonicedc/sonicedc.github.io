@@ -131,7 +131,7 @@ def main():
     (OUT / 'Packages.bz2').write_bytes(bz2.compress(packages))
     stamp = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S +0000')
     architectures = ' '.join(sorted({record['Architecture'] for record in records}))
-    release = f'Origin: SonicEDC\nLabel: SonicEDC\nSuite: stable\nVersion: 1.0\nCodename: sonicedc\nArchitectures: {architectures}\nComponents: main\nDescription: SonicEDC packages for Sileo\nDate: {stamp}\n'
+    release = f'Origin: sonicedc\nLabel: sonicedc\nSuite: stable\nVersion: 1.0\nCodename: sonicedc\nArchitectures: {architectures}\nComponents: main\nDescription: sonicedc packages for Sileo\nDate: {stamp}\n'
     for label, algorithm in [('MD5Sum', 'md5'), ('SHA1', 'sha1'), ('SHA256', 'sha256'), ('SHA512', 'sha512')]:
         release += f'{label}:\n'
         for name in ['Packages', 'Packages.gz', 'Packages.bz2']:
