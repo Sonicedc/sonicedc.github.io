@@ -50,6 +50,24 @@ def parse_control(text):
 def digest(data, algorithm):
     return hashlib.new(algorithm, data).hexdigest()
 
+def depiction_html(text):
+    def inline(value):
+        rendered = escape(value)
+        rendered = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', rendered)
+        return re.sub(r'`([^`]+)`', r'<code>\1</code>', rendered)
+    parts = []
+    for block in text.split('\n\n'):
+        lines = block.splitlines()
+        if not lines:
+            continue
+        if lines[0].startswith('**') and lines[0].endswith('**'):
+            parts.append('<h3>' + escape(lines.pop(0)[2:-2]) + '</h3>')
+        if lines and all(line.startswith('- ') for line in lines):
+            parts.append('<ul>' + ''.join('<li>' + inline(line[2:]) + '</li>' for line in lines) + '</ul>')
+        elif lines:
+            parts.append('<p>' + '<br>'.join(inline(line) for line in lines) + '</p>')
+    return ''.join(parts)
+
 def main():
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -64,7 +82,7 @@ def main():
             raise ValueError(f'Duplicate package/version/architecture: {identity}')
         seen.add(identity)
         package = fields['Package']
-        is_carcanvas = package == 'local.carcanvas'
+        is_carcanvas = package in ('local.carcanvas', 'com.sonicedc.carcanvas')
         if not re.fullmatch(r'[A-Za-z0-9_.+-]+\.deb', deb.name):
             raise ValueError(f'Unsafe package filename: {deb.name}')
         payload = deb.read_bytes()
@@ -84,12 +102,16 @@ def main():
         record = {key: fields[key] for key in ('Package', 'Name', 'Version', 'Architecture', 'Description', 'Depends', 'Filename', 'Size', 'SHA256', 'Depiction') if key in fields}
         record['path'] = f'depictions/{slug}/'
         record['icon'] = 'assets/carcanvas.png' if is_carcanvas else 'assets/favicon.svg'
-        record['compatibility'] = 'iOS 16.2 · Rootless' if is_carcanvas else fields['Architecture']
+        record['compatibility'] = (('iOS 15+ · Rootless' if package == 'com.sonicedc.carcanvas' else 'iOS 16.2 · Rootless') if is_carcanvas else fields['Architecture'])
         records.append(record)
         info = [('Version', fields['Version']), ('Architecture', fields['Architecture']), ('Dependencies', fields.get('Depends', 'None specified'))]
         text = fields['Description'].split('\n')[0]
         if is_carcanvas:
-            text += '\n\nCustomize your CarPlay dashboard, cards, dock, appearance, and status bar from Settings.\n\nRequires a compatible rootless jailbreak on iOS 16.2. Dependencies: ElleKit and PreferenceLoader. This is an in-development release.'
+            text += '\n\nCustomize your CarPlay dashboard, cards, dock, appearance, and status bar from Settings.\n\nRequires a compatible rootless jailbreak and the dependencies listed below. This is an in-development release.'
+        metadata_path = ROOT / 'metadata' / (package + '_' + fields['Version'] + '.json')
+        if metadata_path.exists():
+            metadata = json.loads(metadata_path.read_text())
+            text += '\n\n' + metadata['details']
         depiction_json = {'class': 'DepictionTabView', 'minVersion': '0.1', 'tintColor': '#9B72CF', 'tabs': [
             {'class': 'DepictionStackView', 'tabname': 'Details', 'views': [
                 {'class': 'DepictionHeaderView', 'title': fields['Name']},
@@ -98,7 +120,7 @@ def main():
                 {'class': 'DepictionButtonView', 'text': 'Source code', 'link': 'https://github.com/sonicedc/CarCanvas' if is_carcanvas else 'https://github.com/sonicedc/sonicedc.github.io'}]}]}
         (depiction / 'sileo.json').write_text(json.dumps(depiction_json, indent=2) + '\n')
         details = ''.join(f'<div><dt>{escape(k)}</dt><dd>{escape(v)}</dd></div>' for k,v in info)
-        content = f'''<a class="back" href="/">← All packages</a><div class="detail-heading"><img src="/{record['icon']}" alt="" width="96" height="96"><div><p class="eyebrow">{escape(fields['Section'] if 'Section' in fields else 'Package')}</p><h1>{escape(fields['Name'])}</h1><p class="muted">{escape(record['compatibility'])}</p></div></div><div class="detail-body"><p>{escape(text).replace(chr(10), '<br>')}</p><dl>{details}</dl><a class="button primary" href="sileo://source/{BASE}/">Add repository to Sileo <span>↗</span></a><a class="button secondary" href="/{escape(fields['Filename'])}">Download .deb <span>↓</span></a><p class="checksum">SHA-256<br><code>{fields['SHA256']}</code></p></div>'''
+        content = f'''<a class="back" href="/">← All packages</a><div class="detail-heading"><img src="/{record['icon']}" alt="" width="96" height="96"><div><p class="eyebrow">{escape(fields['Section'] if 'Section' in fields else 'Package')}</p><h1>{escape(fields['Name'])}</h1><p class="muted">{escape(record['compatibility'])}</p></div></div><div class="detail-body">{depiction_html(text)}<dl>{details}</dl><a class="button primary" href="sileo://source/{BASE}/">Add repository to Sileo <span>↗</span></a><p class="checksum">SHA-256<br><code>{fields['SHA256']}</code></p></div>'''
         template = (ROOT / 'site' / 'detail.html').read_text()
         (depiction / 'index.html').write_text(template.replace('{{TITLE}}', escape(fields['Name'])).replace('{{CONTENT}}', content))
     if not records:
