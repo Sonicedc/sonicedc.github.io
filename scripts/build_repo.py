@@ -105,9 +105,9 @@ def main():
         record['compatibility'] = (('iOS 15+ · Rootless' if package == 'com.sonicedc.carcanvas' else 'iOS 16.2 · Rootless') if is_carcanvas else fields['Architecture'])
         records.append(record)
         info = [('Version', fields['Version']), ('Architecture', fields['Architecture']), ('Dependencies', fields.get('Depends', 'None specified'))]
-        text = fields['Description'].split('\n')[0]
+        text = '' if is_carcanvas else fields['Description'].split('\n')[0]
         if is_carcanvas:
-            text += '\n\nCustomize your CarPlay dashboard, cards, dock, appearance, and status bar from Settings.\n\nRequires a compatible rootless jailbreak and the dependencies listed below. This is an in-development release.'
+            text += '\n\nCustomize your CarPlay dashboard, cards, dock, appearance, and status bar from Settings.'
         metadata_path = ROOT / 'metadata' / (package + '_' + fields['Version'] + '.json')
         if metadata_path.exists():
             metadata = json.loads(metadata_path.read_text())
