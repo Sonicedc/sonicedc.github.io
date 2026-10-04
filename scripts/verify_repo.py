@@ -77,6 +77,20 @@ def main():
     import struct
     assert struct.unpack('>II', icon[16:24]) == (256, 256)
     assert icon != (OUT / 'assets/carcanvas.png').read_bytes(), 'Repo icon must be independent'
+    featured = json.loads((OUT / 'sileo-featured.json').read_text())
+    assert featured['class'] == 'FeaturedBannersView'
+    assert featured['itemSize'] == '{263, 148}' and featured['itemCornerRadius'] == 10
+    package_ids = {record['Package'] for record in records}
+    assert featured['banners'], 'Featured catalog must contain a banner'
+    for banner in featured['banners']:
+        assert banner['title'] and banner['package'] in package_ids
+        assert isinstance(banner['hideShadow'], bool)
+        assert banner['url'].startswith(BASE + '/')
+        image_path = OUT / banner['url'].removeprefix(BASE + '/')
+        image = image_path.read_bytes()
+        assert image[:8] == b'\x89PNG\r\n\x1a\n'
+        width, height = struct.unpack('>II', image[16:24])
+        assert (width, height) == (1920, 1080), 'Featured banner must be 1920x1080'
     algorithm = None
     for line in (OUT / 'Release').read_text().splitlines():
         if line in ('MD5Sum:', 'SHA1:', 'SHA256:', 'SHA512:'):
