@@ -8,6 +8,12 @@
       "title": "CarCanvas",
       "package": "com.sonicedc.carcanvas",
       "hideShadow": false
+    },
+    {
+      "url": "https://sonicedc.github.io/assets/importone-featured.png",
+      "title": "Importone",
+      "package": "com.sonicedc.importone",
+      "hideShadow": false
     }
   ]
 }

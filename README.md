@@ -46,8 +46,10 @@ The independent lavender ribbon mark is deployed as `CydiaIcon.png`, `CydiaIcon@
 
 Native package depictions follow [Sileo’s native depiction documentation](https://developer.getsileo.app/native-depictions), use version `0.4`, and contain About and Information tabs. Buttons use the documented `action` field. Feature sections come from `metadata/<package>_<version>.json`; the website and Sileo share the same package data. The deployment validates component requirements and local asset URLs.
 
-The native depiction palette uses `tintColor: #BFA3F0` and `backgroundColor: #17131F`, with a wide abstract `headerImage` at `assets/sileo-header.png`. Body labels use explicit text colors and 16-point horizontal margins; headings and subheaders separate features, compatibility, and package metadata. No screenshots or promotional taglines are fabricated. Native rendering should be checked on-device; the automated checks validate JSON structure, asset URLs, and package integrity.
+The native depiction palette uses `tintColor: #BFA3F0` and `backgroundColor: #17131F`, with a wide abstract `headerImage` at `assets/sileo-header.png`. Descriptions, feature lists, compatibility notes, package metadata, and longer section headings use native Markdown components with measured height and standard margins to wrap on narrow screens. Fixed-height labels are excluded from the native depictions. No screenshots or promotional taglines are fabricated. Native rendering should be checked on-device; the automated checks validate JSON structure, asset URLs, and package integrity.
 
 ## Featured Banner
 
 `site/sileo-featured.json` publishes at `/sileo-featured.json`, following [Sileo’s Featured API](https://developer.getsileo.app/sileo-featured). It features `com.sonicedc.carcanvas` using the text-free 1920×1080 artwork at `/assets/carcanvas-featured.png`. Sileo supplies the `CarCanvas` title overlay. `itemSize` is `{263, 148}`, corner radius is 10, and the title shadow remains enabled for readability. Deployment verifies the package ID, image URL, and image dimensions.
+
+Importone is also featured using `/assets/importone-featured.png`, linked to `com.sonicedc.importone`. Both featured images are text-free 1920×1080 PNGs. Native Markdown body text follows Sileo’s active text theme. Validation prevents regression to single-line `DepictionLabelView` blocks.

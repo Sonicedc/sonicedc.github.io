@@ -108,7 +108,7 @@ def main():
         record['icon'] = 'assets/carcanvas.png' if is_carcanvas else ('assets/importone.png' if is_importone else 'assets/repo-icon.png')
         record['compatibility'] = (('iOS 15+ · Rootless' if package == 'com.sonicedc.carcanvas' else 'iOS 16.2 · Rootless') if is_carcanvas else ('iOS 15+ · Rootless' if is_importone else fields['Architecture']))
         records.append(record)
-        source_url = 'https://github.com/sonicedc/CarCanvas' if is_carcanvas else ('https://github.com/Sonicedc/Importone' if is_importone else 'https://github.com/sonicedc/sonicedc.github.io')
+        source_url = 'https://github.com/sonicedc/CarCanvas' if is_carcanvas else ('https://github.com/sonicedc/Importone' if is_importone else 'https://github.com/sonicedc/sonicedc.github.io')
         info = [('Version', fields['Version']), ('Package', package),
                 ('Architecture', fields['Architecture']),
                 ('Author', fields.get('Author', fields.get('Maintainer', 'sonicedc'))),
@@ -126,41 +126,38 @@ def main():
                 sections.append((lines[0][2:-2], '\n'.join(lines[1:])))
             else:
                 notes.append(block.strip())
-        # Explicit label colors keep body copy readable on the custom dark palette.
-        # Non-bold native headings use Sileo's fixed neutral color instead of theme-dependent text.
-        def label(text, size=15, color='#E6DDED', weight='regular', bottom=12):
-            return {'class': 'DepictionLabelView', 'text': text, 'fontSize': size,
-                    'fontWeight': weight, 'textColor': color, 'alignment': 0,
-                    'margins': f'{{0, 16, {bottom}, 16}}', 'usePadding': True}
+        # Sileo labels are single-line with a fixed 20-point content height.
+        # Markdown calculates its height from the available width and wraps naturally.
+        def text_block(text):
+            return {'class': 'DepictionMarkdownView', 'markdown': text,
+                    'useMargins': True, 'useSpacing': True, 'tintColor': '#BFA3F0'}
         def header(title):
             return {'class': 'DepictionHeaderView', 'title': title, 'alignment': 0,
                     'useBoldText': False, 'useMargins': True, 'useBottomMargin': True}
         def subheader(title):
-            return {'class': 'DepictionSubheaderView', 'title': title,
-                    'useBoldText': False, 'useMargins': True, 'useBottomMargin': False}
+            # Markdown headings also wrap when feature titles exceed a phone's width.
+            return text_block('### ' + title)
         about_views = [
             {'class': 'DepictionSpacerView', 'spacing': 12},
             header(fields['Name']),
-            label(f"Version {fields['Version']} · {record['compatibility']}",
-                  size=13, color='#BFA3F0', weight='medium', bottom=16),
-            label(summary, size=16, bottom=16),
+            text_block(f"**Version {fields['Version']}**\n\n{record['compatibility']}"),
+            text_block(summary),
             {'class': 'DepictionSeparatorView'},
             header('Features')]
         for title, body in sections:
-            plain_body = '\n'.join(line[2:] if line.startswith('- ') else line for line in body.splitlines())
-            about_views += [subheader(title), label(plain_body)]
+            about_views += [subheader(title), text_block(body)]
         if not sections:
-            about_views += [label(fields['Description'].split('\n')[0])]
+            about_views += [text_block(fields['Description'].split('\n')[0])]
         if notes:
             about_views += [{'class': 'DepictionSeparatorView'}, subheader('Compatibility'),
-                            label('\n\n'.join(notes), size=13, color='#C6B8D8')]
+                            text_block('\n\n'.join(notes))]
         about_views += [{'class': 'DepictionSpacerView', 'spacing': 16}]
         information_views = [{'class': 'DepictionSpacerView', 'spacing': 12}, header('Information')]
         for title, value in info:
-            information_views += [subheader(title), label(value, size=15)]
+            information_views += [subheader(title), text_block(value)]
         if notes:
             information_views += [{'class': 'DepictionSeparatorView'}, subheader('Compatibility'),
-                                  label('\n\n'.join(notes), size=13, color='#C6B8D8')]
+                                  text_block('\n\n'.join(notes))]
         information_views += [
             {'class': 'DepictionSeparatorView'},
             subheader('Links'),

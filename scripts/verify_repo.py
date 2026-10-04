@@ -36,6 +36,9 @@ def verify_native(view):
     for field in REQUIRED[view['class']]:
         assert field in view, f"Missing {field} in {view['class']}"
     assert 'link' not in view, 'Sileo buttons require action, not link'
+    assert view['class'] != 'DepictionLabelView', 'Fixed-height single-line labels truncate mobile copy; use Markdown'
+    if view['class'] == 'DepictionMarkdownView':
+        assert view.get('useMargins') is True and view.get('useSpacing') is True
     for field in ('URL', 'action', 'headerImage'):
         url = view.get(field, '')
         if url.startswith(BASE + '/'):
