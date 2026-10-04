@@ -39,3 +39,9 @@ The public repository must be named `sonicedc.github.io`. In **Settings → Page
 - `site/detail.html`: package detail template.
 - `scripts/build_repo.py`: Sileo metadata and catalog generation.
 - `packages/`: installable `.deb` packages.
+
+## Repository identity and Sileo project pages
+
+The independent lavender ribbon mark is deployed as `CydiaIcon.png`, `CydiaIcon@2x.png`, and `CydiaIcon@3x.png` at the repository root, plus website favicon and touch-icon sizes. It is separate from CarCanvas’s package icon. The original generated asset is in `site/assets/repo-icon.png`.
+
+Native package depictions follow [Sileo’s native depiction documentation](https://developer.getsileo.app/native-depictions), use version `0.4`, and contain About and Information tabs. Buttons use the documented `action` field. Feature sections come from `metadata/<package>_<version>.json`; the website and Sileo share the same package data. The deployment validates component requirements and local asset URLs.

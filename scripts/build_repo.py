@@ -2,6 +2,7 @@
 """Build a flat APT/Sileo repository and static catalog using only Python's stdlib."""
 from pathlib import Path
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from html import escape
 import bz2, gzip, hashlib, io, json, re, shutil, subprocess, tarfile
 
@@ -101,26 +102,59 @@ def main():
         stanzas.append('\n'.join(f'{key}: {value}' for key, value in fields.items()))
         record = {key: fields[key] for key in ('Package', 'Name', 'Version', 'Architecture', 'Description', 'Depends', 'Filename', 'Size', 'SHA256', 'Depiction') if key in fields}
         record['path'] = f'depictions/{slug}/'
-        record['icon'] = 'assets/carcanvas.png' if is_carcanvas else 'assets/favicon.svg'
+        record['icon'] = 'assets/carcanvas.png' if is_carcanvas else 'assets/repo-icon.png'
         record['compatibility'] = (('iOS 15+ · Rootless' if package == 'com.sonicedc.carcanvas' else 'iOS 16.2 · Rootless') if is_carcanvas else fields['Architecture'])
         records.append(record)
-        info = [('Version', fields['Version']), ('Architecture', fields['Architecture']), ('Dependencies', fields.get('Depends', 'None specified'))]
-        text = '' if is_carcanvas else fields['Description'].split('\n')[0]
-        if is_carcanvas:
-            text += '\n\nCustomize your CarPlay dashboard, cards, dock, appearance, and status bar from Settings.'
+        source_url = 'https://github.com/sonicedc/CarCanvas' if is_carcanvas else 'https://github.com/sonicedc/sonicedc.github.io'
+        info = [('Version', fields['Version']), ('Package', package),
+                ('Architecture', fields['Architecture']),
+                ('Author', fields.get('Author', fields.get('Maintainer', 'sonicedc'))),
+                ('Dependencies', fields.get('Depends', 'None specified'))]
+        summary = ('Customize your CarPlay dashboard, cards, dock, appearance, and status bar from Settings.'
+                   if is_carcanvas else fields['Description'].split('\n')[0])
         metadata_path = ROOT / 'metadata' / (package + '_' + fields['Version'] + '.json')
-        if metadata_path.exists():
-            metadata = json.loads(metadata_path.read_text())
-            text += '\n\n' + metadata['details']
-        depiction_json = {'class': 'DepictionTabView', 'minVersion': '0.1', 'tintColor': '#9B72CF', 'tabs': [
-            {'class': 'DepictionStackView', 'tabname': 'Details', 'views': [
-                {'class': 'DepictionHeaderView', 'title': fields['Name']},
-                {'class': 'DepictionMarkdownView', 'markdown': text, 'useSpacing': True},
-                *[{'class': 'DepictionTableTextView', 'title': label, 'text': value} for label, value in info],
-                {'class': 'DepictionButtonView', 'text': 'Source code', 'link': 'https://github.com/sonicedc/CarCanvas' if is_carcanvas else 'https://github.com/sonicedc/sonicedc.github.io'}]}]}
+        metadata = json.loads(metadata_path.read_text()) if metadata_path.exists() else {}
+        sections, notes = [], []
+        for block in metadata.get('details', '').split('\n\n'):
+            lines = block.strip().splitlines()
+            if not lines:
+                continue
+            if lines[0].startswith('**') and lines[0].endswith('**'):
+                sections.append((lines[0][2:-2], '\n'.join(lines[1:])))
+            else:
+                notes.append(block.strip())
+        about_views = [
+            {'class': 'DepictionImageView', 'URL': f"{BASE}/{record['icon']}",
+             'width': 80, 'height': 80, 'cornerRadius': 18, 'alignment': 0},
+            {'class': 'DepictionHeaderView', 'title': fields['Name']},
+            {'class': 'DepictionMarkdownView', 'markdown': summary, 'useSpacing': True}]
+        for title, body in sections:
+            about_views += [
+                {'class': 'DepictionSubheaderView', 'title': title},
+                {'class': 'DepictionMarkdownView', 'markdown': body, 'useSpacing': True}]
+        information_views = [{'class': 'DepictionHeaderView', 'title': 'Information'},
+            *[{'class': 'DepictionTableTextView', 'title': label, 'text': value} for label, value in info]]
+        if notes:
+            information_views += [
+                {'class': 'DepictionSubheaderView', 'title': 'Compatibility'},
+                {'class': 'DepictionMarkdownView', 'markdown': '\n\n'.join(notes), 'useSpacing': True}]
+        information_views += [
+            {'class': 'DepictionSeparatorView'},
+            {'class': 'DepictionTableButtonView', 'title': 'Source code', 'action': source_url},
+            {'class': 'DepictionTableButtonView', 'title': 'Report an issue', 'action': source_url + '/issues'},
+            {'class': 'DepictionTableButtonView', 'title': 'sonicedc repository', 'action': BASE + '/'}]
+        depiction_json = {'class': 'DepictionTabView', 'minVersion': '0.4', 'tintColor': '#9B72CF', 'tabs': [
+            {'class': 'DepictionStackView', 'tabname': 'About', 'views': about_views},
+            {'class': 'DepictionStackView', 'tabname': 'Information', 'views': information_views}]}
         (depiction / 'sileo.json').write_text(json.dumps(depiction_json, indent=2) + '\n')
         details = ''.join(f'<div><dt>{escape(k)}</dt><dd>{escape(v)}</dd></div>' for k,v in info)
-        content = f'''<a class="back" href="/">← All packages</a><div class="detail-heading"><img src="/{record['icon']}" alt="" width="96" height="96"><div><p class="eyebrow">{escape(fields['Section'] if 'Section' in fields else 'Package')}</p><h1>{escape(fields['Name'])}</h1><p class="muted">{escape(record['compatibility'])}</p></div></div><div class="detail-body">{depiction_html(text)}<dl>{details}</dl><a class="button primary" href="sileo://source/{BASE}/">Add repository to Sileo <span>↗</span></a><p class="checksum">SHA-256<br><code>{fields['SHA256']}</code></p></div>'''
+        features = ''.join(f'<section class="feature"><h3>{escape(title)}</h3>{depiction_html(body)}</section>' for title, body in sections)
+        note_html = f'<section class="compatibility"><h2>Compatibility</h2>{depiction_html(chr(10).join(notes))}</section>' if notes else ''
+        content = f'''<a class="back" href="/">← All packages</a>
+        <div class="project-heading"><img class="project-icon" src="/{record['icon']}" alt="" width="96" height="96"><div><p class="eyebrow">{escape(fields.get('Section', 'Package'))}</p><h1>{escape(fields['Name'])}</h1><div class="project-badges"><span>v{escape(fields['Version'])}</span><span>{escape(record['compatibility'])}</span></div></div></div>
+        <p class="project-summary">{escape(summary)}</p>
+        <div class="project-layout"><div class="project-content"><h2 class="features-heading">Features</h2><div class="features-grid">{features or '<p>' + escape(summary) + '</p>'}</div>{note_html}</div>
+        <aside class="project-information"><h2>Information</h2><dl>{details}</dl><a class="button primary" href="sileo://source/{BASE}/">Add to Sileo <span aria-hidden="true">↗</span></a><div class="project-links"><a href="{source_url}">Source code <span aria-hidden="true">↗</span></a><a href="{source_url}/issues">Report an issue <span aria-hidden="true">↗</span></a></div><details class="package-checksum"><summary>Package checksum</summary><p>SHA-256</p><code>{fields['SHA256']}</code></details></aside></div>'''
         template = (ROOT / 'site' / 'detail.html').read_text()
         (depiction / 'index.html').write_text(template.replace('{{TITLE}}', escape(fields['Name'])).replace('{{CONTENT}}', content))
     if not records:
@@ -142,7 +176,7 @@ def main():
     cards = ''
     for record in records:
         cards += f'''<a class="package-card" href="{record['path']}"><div class="package-top"><img src="{record['icon']}" alt="" width="76" height="76"><span class="version">v{escape(record['Version'])}</span></div><div class="package-title"><h3>{escape(record['Name'])}</h3><span aria-hidden="true">↗</span></div><p>{escape(record['Description'].split(chr(10))[0])}</p><div class="package-bottom"><span>{escape(record['compatibility'])}</span><span>View package →</span></div></a>'''
-    index = (OUT / 'index.html').read_text().replace('{{CARDS}}', cards).replace('{{COUNT}}', str(len(records))).replace('{{UPDATED}}', datetime.now(timezone.utc).strftime('%b %d, %Y'))
+    index = (OUT / 'index.html').read_text().replace('{{CARDS}}', cards).replace('{{COUNT}}', str(len(records))).replace('{{UPDATED}}', datetime.now(ZoneInfo('America/New_York')).strftime('%b %d, %Y'))
     (OUT / 'index.html').write_text(index)
     (OUT / 'detail.html').unlink()
     (OUT / '.nojekyll').touch()

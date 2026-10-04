@@ -15,6 +15,33 @@ class Links(HTMLParser):
             if key in ('href', 'src') and value:
                 self.links.append(value)
 
+
+REQUIRED = {
+    'DepictionTabView': ('minVersion', 'tabs'),
+    'DepictionStackView': ('tabname', 'views'),
+    'DepictionHeaderView': ('title',),
+    'DepictionSubheaderView': ('title',),
+    'DepictionMarkdownView': ('markdown',),
+    'DepictionImageView': ('URL', 'width', 'height', 'cornerRadius'),
+    'DepictionTableTextView': ('title', 'text'),
+    'DepictionTableButtonView': ('title', 'action'),
+    'DepictionButtonView': ('action',),
+    'DepictionSeparatorView': (),
+}
+
+def verify_native(view):
+    assert view['class'] in REQUIRED, f"Unknown depiction class: {view['class']}"
+    for field in REQUIRED[view['class']]:
+        assert field in view, f"Missing {field} in {view['class']}"
+    assert 'link' not in view, 'Sileo buttons require action, not link'
+    for field in ('URL', 'action'):
+        url = view.get(field, '')
+        if url.startswith(BASE + '/'):
+            assert (OUT / url.removeprefix(BASE + '/')).exists(), f'Broken depiction asset: {url}'
+    for key in ('tabs', 'views'):
+        for child in view.get(key, []):
+            verify_native(child)
+
 def main():
     index = (OUT / 'Packages').read_bytes()
     assert gzip.decompress((OUT / 'Packages.gz').read_bytes()) == index
@@ -38,7 +65,13 @@ def main():
             path = OUT / fields[field].removeprefix(BASE + '/')
             assert path.exists()
         depiction = json.loads((OUT / fields['SileoDepiction'].removeprefix(BASE + '/')).read_text())
-        assert depiction['class'] == 'DepictionTabView' and depiction['tabs']
+        assert depiction['class'] == 'DepictionTabView' and depiction['minVersion'] == '0.4'
+        verify_native(depiction)
+    icon = (OUT / 'CydiaIcon.png').read_bytes()
+    assert icon[:8] == b'\x89PNG\r\n\x1a\n'
+    import struct
+    assert struct.unpack('>II', icon[16:24]) == (256, 256)
+    assert icon != (OUT / 'assets/carcanvas.png').read_bytes(), 'Repo icon must be independent'
     algorithm = None
     for line in (OUT / 'Release').read_text().splitlines():
         if line in ('MD5Sum:', 'SHA1:', 'SHA256:', 'SHA512:'):
