@@ -83,6 +83,7 @@ def main():
             raise ValueError(f'Duplicate package/version/architecture: {identity}')
         seen.add(identity)
         package = fields['Package']
+        is_importone = package == 'com.sonicedc.importone'
         is_carcanvas = package in ('local.carcanvas', 'com.sonicedc.carcanvas')
         if not re.fullmatch(r'[A-Za-z0-9_.+-]+\.deb', deb.name):
             raise ValueError(f'Unsafe package filename: {deb.name}')
@@ -99,13 +100,15 @@ def main():
         fields['SileoDepiction'] = f'{BASE}/depictions/{slug}/sileo.json'
         if is_carcanvas:
             fields['Icon'] = f'{BASE}/assets/carcanvas.png'
+        if is_importone:
+            fields['Icon'] = f'{BASE}/assets/importone.png'
         stanzas.append('\n'.join(f'{key}: {value}' for key, value in fields.items()))
         record = {key: fields[key] for key in ('Package', 'Name', 'Version', 'Architecture', 'Description', 'Depends', 'Filename', 'Size', 'SHA256', 'Depiction') if key in fields}
         record['path'] = f'depictions/{slug}/'
-        record['icon'] = 'assets/carcanvas.png' if is_carcanvas else 'assets/repo-icon.png'
-        record['compatibility'] = (('iOS 15+ · Rootless' if package == 'com.sonicedc.carcanvas' else 'iOS 16.2 · Rootless') if is_carcanvas else fields['Architecture'])
+        record['icon'] = 'assets/carcanvas.png' if is_carcanvas else ('assets/importone.png' if is_importone else 'assets/repo-icon.png')
+        record['compatibility'] = (('iOS 15+ · Rootless' if package == 'com.sonicedc.carcanvas' else 'iOS 16.2 · Rootless') if is_carcanvas else ('iOS 15+ · Rootless' if is_importone else fields['Architecture']))
         records.append(record)
-        source_url = 'https://github.com/sonicedc/CarCanvas' if is_carcanvas else 'https://github.com/sonicedc/sonicedc.github.io'
+        source_url = 'https://github.com/sonicedc/CarCanvas' if is_carcanvas else ('https://github.com/Sonicedc/Importone' if is_importone else 'https://github.com/sonicedc/sonicedc.github.io')
         info = [('Version', fields['Version']), ('Package', package),
                 ('Architecture', fields['Architecture']),
                 ('Author', fields.get('Author', fields.get('Maintainer', 'sonicedc'))),
@@ -180,7 +183,7 @@ def main():
         <div class="project-layout"><div class="project-content"><h2 class="features-heading">Features</h2><div class="features-grid">{features or '<p>' + escape(summary) + '</p>'}</div>{note_html}</div>
         <aside class="project-information"><h2>Information</h2><dl>{details}</dl><a class="button primary" href="sileo://source/{BASE}/">Add to Sileo <span aria-hidden="true">↗</span></a><div class="project-links"><a href="{source_url}">Source code <span aria-hidden="true">↗</span></a><a href="{source_url}/issues">Report an issue <span aria-hidden="true">↗</span></a></div><details class="package-checksum"><summary>Package checksum</summary><p>SHA-256</p><code>{fields['SHA256']}</code></details></aside></div>'''
         template = (ROOT / 'site' / 'detail.html').read_text()
-        (depiction / 'index.html').write_text(template.replace('{{TITLE}}', escape(fields['Name'])).replace('{{CONTENT}}', content))
+        (depiction / 'index.html').write_text(template.replace('{{SOURCE}}', source_url).replace('{{TITLE}}', escape(fields['Name'])).replace('{{CONTENT}}', content))
     if not records:
         raise ValueError('Add at least one .deb to packages/ before building')
     packages = ('\n\n'.join(stanzas) + '\n\n').encode()
