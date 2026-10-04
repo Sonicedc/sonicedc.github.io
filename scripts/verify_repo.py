@@ -29,6 +29,7 @@ REQUIRED = {
     'DepictionSeparatorView': (),
     'DepictionLabelView': ('text',),
     'DepictionSpacerView': ('spacing',),
+    'DepictionScreenshotsView': ('screenshots', 'itemSize', 'itemCornerRadius'),
 }
 
 def verify_native(view):
@@ -43,6 +44,14 @@ def verify_native(view):
         url = view.get(field, '')
         if url.startswith(BASE + '/'):
             assert (OUT / url.removeprefix(BASE + '/')).exists(), f'Broken depiction asset: {url}'
+    if view['class'] == 'DepictionScreenshotsView':
+        assert len(view['screenshots']) == 3
+        for shot in view['screenshots']:
+            assert shot['accessibilityText']
+            assert (OUT / shot['url'].removeprefix(BASE + '/')).exists()
+        for device in ('iphone', 'ipad'):
+            if device in view:
+                verify_native(view[device])
     for key in ('tabs', 'views'):
         for child in view.get(key, []):
             verify_native(child)

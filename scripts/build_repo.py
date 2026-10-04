@@ -126,6 +126,14 @@ def main():
                 sections.append((lines[0][2:-2], '\n'.join(lines[1:])))
             else:
                 notes.append(block.strip())
+        screenshots = ([
+            {'path': 'assets/carcanvas/dashboard-sidebar.png', 'title': 'Sidebar dashboard',
+             'description': 'CarCanvas dashboard with a left sidebar, large map, and music controls.'},
+            {'path': 'assets/carcanvas/app-grid.png', 'title': 'App grid',
+             'description': 'CarCanvas app grid with a purple wallpaper, custom dock, and bottom status bar.'},
+            {'path': 'assets/carcanvas/dashboard-cards.png', 'title': 'Dashboard cards',
+             'description': 'CarCanvas dashboard with destination and music cards beside a large map.'}
+        ] if is_carcanvas else [])
         # Sileo labels are single-line with a fixed 20-point content height.
         # Markdown calculates its height from the available width and wraps naturally.
         def text_block(text):
@@ -144,6 +152,15 @@ def main():
             text_block(summary),
             {'class': 'DepictionSeparatorView'},
             header('Features')]
+        if screenshots:
+            native_shots = [{'url': f"{BASE}/{shot['path']}", 'accessibilityText': shot['description']} for shot in screenshots]
+            gallery = {'class': 'DepictionScreenshotsView', 'screenshots': native_shots,
+                       'itemSize': '{288, 180}', 'itemCornerRadius': 12}
+            gallery['ipad'] = {'class': 'DepictionScreenshotsView', 'screenshots': native_shots,
+                              'itemSize': '{480, 300}', 'itemCornerRadius': 12}
+            # Display real screenshots before the feature descriptions.
+            about_views[-1:-1] = [header('Screenshots'), gallery,
+                                {'class': 'DepictionSpacerView', 'spacing': 12}]
         for title, body in sections:
             about_views += [subheader(title), text_block(body)]
         if not sections:
@@ -174,9 +191,14 @@ def main():
         details = ''.join(f'<div><dt>{escape(k)}</dt><dd>{escape(v)}</dd></div>' for k,v in info)
         features = ''.join(f'<section class="feature"><h3>{escape(title)}</h3>{depiction_html(body)}</section>' for title, body in sections)
         note_html = f'<section class="compatibility"><h2>Compatibility</h2>{depiction_html(chr(10).join(notes))}</section>' if notes else ''
-        content = f'''<a class="back" href="/">← All packages</a>
+        gallery_html = ''
+        if screenshots:
+            cards = ''.join(f'<figure><a href="/{shot["path"]}" target="_blank" rel="noopener" aria-label="Open {escape(shot["title"])} screenshot"><img src="/{shot["path"]}" alt="{escape(shot["description"])}" width="1280" height="800" loading="lazy"></a><figcaption>{escape(shot["title"])}</figcaption></figure>' for shot in screenshots)
+            gallery_html = f'<section class="screenshot-section" aria-label="CarCanvas screenshots"><h2>Screenshots</h2><div class="screenshot-gallery">{cards}</div></section>'
+        content = f''' <a class="back" href="/">← All packages</a>
         <div class="project-heading"><img class="project-icon" src="/{record['icon']}" alt="" width="96" height="96"><div><p class="eyebrow">{escape(fields.get('Section', 'Package'))}</p><h1>{escape(fields['Name'])}</h1><div class="project-badges"><span>v{escape(fields['Version'])}</span><span>{escape(record['compatibility'])}</span></div></div></div>
         <p class="project-summary">{escape(summary)}</p>
+        {gallery_html}
         <div class="project-layout"><div class="project-content"><h2 class="features-heading">Features</h2><div class="features-grid">{features or '<p>' + escape(summary) + '</p>'}</div>{note_html}</div>
         <aside class="project-information"><h2>Information</h2><dl>{details}</dl><a class="button primary" href="sileo://source/{BASE}/">Add to Sileo <span aria-hidden="true">↗</span></a><div class="project-links"><a href="{source_url}">Source code <span aria-hidden="true">↗</span></a><a href="{source_url}/issues">Report an issue <span aria-hidden="true">↗</span></a></div><details class="package-checksum"><summary>Package checksum</summary><p>SHA-256</p><code>{fields['SHA256']}</code></details></aside></div>'''
         template = (ROOT / 'site' / 'detail.html').read_text()

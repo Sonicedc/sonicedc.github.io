@@ -4,7 +4,7 @@
   "itemCornerRadius": 10,
   "banners": [
     {
-      "url": "https://sonicedc.github.io/assets/carcanvas-featured.png",
+      "url": "https://sonicedc.github.io/assets/carcanvas-featured-screenshots.png",
       "title": "CarCanvas",
       "package": "com.sonicedc.carcanvas",
       "hideShadow": false
