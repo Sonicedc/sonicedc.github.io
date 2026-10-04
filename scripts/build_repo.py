@@ -123,29 +123,53 @@ def main():
                 sections.append((lines[0][2:-2], '\n'.join(lines[1:])))
             else:
                 notes.append(block.strip())
+        # Explicit label colors keep body copy readable on the custom dark palette.
+        # Non-bold native headings use Sileo's fixed neutral color instead of theme-dependent text.
+        def label(text, size=15, color='#E6DDED', weight='regular', bottom=12):
+            return {'class': 'DepictionLabelView', 'text': text, 'fontSize': size,
+                    'fontWeight': weight, 'textColor': color, 'alignment': 0,
+                    'margins': f'{{0, 16, {bottom}, 16}}', 'usePadding': True}
+        def header(title):
+            return {'class': 'DepictionHeaderView', 'title': title, 'alignment': 0,
+                    'useBoldText': False, 'useMargins': True, 'useBottomMargin': True}
+        def subheader(title):
+            return {'class': 'DepictionSubheaderView', 'title': title,
+                    'useBoldText': False, 'useMargins': True, 'useBottomMargin': False}
         about_views = [
-            {'class': 'DepictionImageView', 'URL': f"{BASE}/{record['icon']}",
-             'width': 80, 'height': 80, 'cornerRadius': 18, 'alignment': 0},
-            {'class': 'DepictionHeaderView', 'title': fields['Name']},
-            {'class': 'DepictionMarkdownView', 'markdown': summary, 'useSpacing': True}]
+            {'class': 'DepictionSpacerView', 'spacing': 12},
+            header(fields['Name']),
+            label(f"Version {fields['Version']} · {record['compatibility']}",
+                  size=13, color='#BFA3F0', weight='medium', bottom=16),
+            label(summary, size=16, bottom=16),
+            {'class': 'DepictionSeparatorView'},
+            header('Features')]
         for title, body in sections:
-            about_views += [
-                {'class': 'DepictionSubheaderView', 'title': title},
-                {'class': 'DepictionMarkdownView', 'markdown': body, 'useSpacing': True}]
-        information_views = [{'class': 'DepictionHeaderView', 'title': 'Information'},
-            *[{'class': 'DepictionTableTextView', 'title': label, 'text': value} for label, value in info]]
+            plain_body = '\n'.join(line[2:] if line.startswith('- ') else line for line in body.splitlines())
+            about_views += [subheader(title), label(plain_body)]
+        if not sections:
+            about_views += [label(fields['Description'].split('\n')[0])]
         if notes:
-            information_views += [
-                {'class': 'DepictionSubheaderView', 'title': 'Compatibility'},
-                {'class': 'DepictionMarkdownView', 'markdown': '\n\n'.join(notes), 'useSpacing': True}]
+            about_views += [{'class': 'DepictionSeparatorView'}, subheader('Compatibility'),
+                            label('\n\n'.join(notes), size=13, color='#C6B8D8')]
+        about_views += [{'class': 'DepictionSpacerView', 'spacing': 16}]
+        information_views = [{'class': 'DepictionSpacerView', 'spacing': 12}, header('Information')]
+        for title, value in info:
+            information_views += [subheader(title), label(value, size=15)]
+        if notes:
+            information_views += [{'class': 'DepictionSeparatorView'}, subheader('Compatibility'),
+                                  label('\n\n'.join(notes), size=13, color='#C6B8D8')]
         information_views += [
             {'class': 'DepictionSeparatorView'},
-            {'class': 'DepictionTableButtonView', 'title': 'Source code', 'action': source_url},
-            {'class': 'DepictionTableButtonView', 'title': 'Report an issue', 'action': source_url + '/issues'},
-            {'class': 'DepictionTableButtonView', 'title': 'sonicedc repository', 'action': BASE + '/'}]
-        depiction_json = {'class': 'DepictionTabView', 'minVersion': '0.4', 'tintColor': '#9B72CF', 'tabs': [
-            {'class': 'DepictionStackView', 'tabname': 'About', 'views': about_views},
-            {'class': 'DepictionStackView', 'tabname': 'Information', 'views': information_views}]}
+            subheader('Links'),
+            {'class': 'DepictionTableButtonView', 'title': 'Source code', 'action': source_url, 'tintColor': '#BFA3F0'},
+            {'class': 'DepictionTableButtonView', 'title': 'Report an issue', 'action': source_url + '/issues', 'tintColor': '#BFA3F0'},
+            {'class': 'DepictionTableButtonView', 'title': 'sonicedc repository', 'action': BASE + '/', 'tintColor': '#BFA3F0'},
+            {'class': 'DepictionSpacerView', 'spacing': 16}]
+        depiction_json = {'class': 'DepictionTabView', 'minVersion': '0.4',
+            'headerImage': f'{BASE}/assets/sileo-header.png',
+            'tintColor': '#BFA3F0', 'backgroundColor': '#17131F', 'tabs': [
+                {'class': 'DepictionStackView', 'tabname': 'About', 'views': about_views},
+                {'class': 'DepictionStackView', 'tabname': 'Information', 'views': information_views}]}
         (depiction / 'sileo.json').write_text(json.dumps(depiction_json, indent=2) + '\n')
         details = ''.join(f'<div><dt>{escape(k)}</dt><dd>{escape(v)}</dd></div>' for k,v in info)
         features = ''.join(f'<section class="feature"><h3>{escape(title)}</h3>{depiction_html(body)}</section>' for title, body in sections)

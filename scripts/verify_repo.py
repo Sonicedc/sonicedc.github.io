@@ -27,6 +27,8 @@ REQUIRED = {
     'DepictionTableButtonView': ('title', 'action'),
     'DepictionButtonView': ('action',),
     'DepictionSeparatorView': (),
+    'DepictionLabelView': ('text',),
+    'DepictionSpacerView': ('spacing',),
 }
 
 def verify_native(view):
@@ -34,7 +36,7 @@ def verify_native(view):
     for field in REQUIRED[view['class']]:
         assert field in view, f"Missing {field} in {view['class']}"
     assert 'link' not in view, 'Sileo buttons require action, not link'
-    for field in ('URL', 'action'):
+    for field in ('URL', 'action', 'headerImage'):
         url = view.get(field, '')
         if url.startswith(BASE + '/'):
             assert (OUT / url.removeprefix(BASE + '/')).exists(), f'Broken depiction asset: {url}'
@@ -66,6 +68,9 @@ def main():
             assert path.exists()
         depiction = json.loads((OUT / fields['SileoDepiction'].removeprefix(BASE + '/')).read_text())
         assert depiction['class'] == 'DepictionTabView' and depiction['minVersion'] == '0.4'
+        assert depiction['headerImage'].endswith('/assets/sileo-header.png')
+        assert depiction['tintColor'] == '#BFA3F0'
+        assert depiction['backgroundColor'] == '#17131F'
         verify_native(depiction)
     icon = (OUT / 'CydiaIcon.png').read_bytes()
     assert icon[:8] == b'\x89PNG\r\n\x1a\n'
