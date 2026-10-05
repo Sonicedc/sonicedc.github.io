@@ -45,7 +45,7 @@ def verify_native(view):
         if url.startswith(BASE + '/'):
             assert (OUT / url.removeprefix(BASE + '/')).exists(), f'Broken depiction asset: {url}'
     if view['class'] == 'DepictionScreenshotsView':
-        assert len(view['screenshots']) == 3
+        assert len(view['screenshots']) == 4
         for shot in view['screenshots']:
             assert shot['accessibilityText']
             assert (OUT / shot['url'].removeprefix(BASE + '/')).exists()

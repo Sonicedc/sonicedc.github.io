@@ -132,7 +132,9 @@ def main():
             {'path': 'assets/carstomize/app-grid.png', 'title': 'App grid',
              'description': 'Carstomize app grid with a purple wallpaper, custom dock, and bottom status bar.'},
             {'path': 'assets/carstomize/dashboard-cards.png', 'title': 'Dashboard cards',
-             'description': 'Carstomize dashboard with destination and music cards beside a large map.'}
+             'description': 'Carstomize dashboard with destination and music cards beside a large map.'},
+            {'path': 'assets/carstomize/wallpaper-catalog.png', 'title': 'Wallpaper catalog',
+             'description': 'Custom wallpaper pairs above Apple wallpapers in the CarPlay wallpaper catalog.'}
         ] if is_carstomize else [])
         # Sileo labels are single-line with a fixed 20-point content height.
         # Markdown calculates its height from the available width and wraps naturally.
