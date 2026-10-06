@@ -84,8 +84,9 @@ def main():
         seen.add(identity)
         package = fields['Package']
         is_importone = package == 'com.sonicedc.importone'
-        is_carstomize = package in ('local.carstomize', 'com.sonicedc.carstomize')
-        if not re.fullmatch(r'[A-Za-z0-9_.+-]+\.deb', deb.name):
+        is_roothide = package == 'com.sonicedc.carstomize.roothide'
+        is_carstomize = is_roothide or package in ('local.carstomize', 'com.sonicedc.carstomize')
+        if not re.fullmatch(r'[A-Za-z0-9_.+~-]+\.deb', deb.name):
             raise ValueError(f'Unsafe package filename: {deb.name}')
         payload = deb.read_bytes()
         shutil.copy2(deb, OUT / 'debs' / deb.name)
@@ -106,9 +107,9 @@ def main():
         record = {key: fields[key] for key in ('Package', 'Name', 'Version', 'Architecture', 'Description', 'Depends', 'Filename', 'Size', 'SHA256', 'Depiction') if key in fields}
         record['path'] = f'depictions/{slug}/'
         record['icon'] = 'assets/carstomize.png' if is_carstomize else ('assets/importone.png' if is_importone else 'assets/repo-icon.png')
-        record['compatibility'] = (('iOS 15+ · Rootless' if package == 'com.sonicedc.carstomize' else 'iOS 16.2 · Rootless') if is_carstomize else ('iOS 15+ · Rootless' if is_importone else fields['Architecture']))
+        record['compatibility'] = 'iOS 15+ · Roothide' if is_roothide else (('iOS 15+ · Rootless' if package == 'com.sonicedc.carstomize' else 'iOS 16.2 · Rootless') if is_carstomize else ('iOS 15+ · Rootless' if is_importone else fields['Architecture']))
         records.append(record)
-        source_url = 'https://github.com/sonicedc/Carstomize' if is_carstomize else ('https://github.com/sonicedc/Importone' if is_importone else 'https://github.com/sonicedc/sonicedc.github.io')
+        source_url = 'https://github.com/Sonicedc/Carstomizer-Roothide' if is_roothide else 'https://github.com/sonicedc/Carstomize' if is_carstomize else ('https://github.com/sonicedc/Importone' if is_importone else 'https://github.com/sonicedc/sonicedc.github.io')
         info = [('Version', fields['Version']), ('Package', package),
                 ('Architecture', fields['Architecture']),
                 ('Author', fields.get('Author', fields.get('Maintainer', 'sonicedc'))),
