@@ -86,6 +86,9 @@ def main():
         is_importone = package == 'com.sonicedc.importone'
         is_roothide = package == 'com.sonicedc.carstomize.roothide'
         is_carstomize = is_roothide or package in ('local.carstomize', 'com.sonicedc.carstomize')
+        if is_carstomize and not is_roothide:
+            fields['Name'] = 'Carstomizer'
+            fields['Description'] = 'Personalize your CarPlay experience.'
         if not re.fullmatch(r'[A-Za-z0-9_.+~-]+\.deb', deb.name):
             raise ValueError(f'Unsafe package filename: {deb.name}')
         payload = deb.read_bytes()
@@ -109,12 +112,12 @@ def main():
         record['icon'] = 'assets/carstomize.png' if is_carstomize else ('assets/importone.png' if is_importone else 'assets/repo-icon.png')
         record['compatibility'] = 'iOS 15+ · Roothide' if is_roothide else (('iOS 15+ · Rootless' if package == 'com.sonicedc.carstomize' else 'iOS 16.2 · Rootless') if is_carstomize else ('iOS 15+ · Rootless' if is_importone else fields['Architecture']))
         records.append(record)
-        source_url = 'https://github.com/Sonicedc/Carstomizer-Roothide' if is_roothide else 'https://github.com/sonicedc/Carstomize' if is_carstomize else ('https://github.com/sonicedc/Importone' if is_importone else 'https://github.com/sonicedc/sonicedc.github.io')
+        source_url = 'https://github.com/Sonicedc/Carstomizer-Roothide' if is_roothide else 'https://github.com/sonicedc/Carstomizer' if is_carstomize else ('https://github.com/sonicedc/Importone' if is_importone else 'https://github.com/sonicedc/sonicedc.github.io')
         info = [('Version', fields['Version']), ('Package', package),
                 ('Architecture', fields['Architecture']),
                 ('Author', fields.get('Author', fields.get('Maintainer', 'sonicedc'))),
                 ('Dependencies', fields.get('Depends', 'None specified'))]
-        summary = ('Customize your CarPlay dashboard, cards, dock, appearance, and status bar from Settings.'
+        summary = ('Personalize your CarPlay experience.'
                    if is_carstomize else fields['Description'].split('\n')[0])
         metadata_path = ROOT / 'metadata' / (package + '_' + fields['Version'] + '.json')
         metadata = json.loads(metadata_path.read_text()) if metadata_path.exists() else {}
@@ -129,11 +132,11 @@ def main():
                 notes.append(block.strip())
         screenshots = ([
             {'path': 'assets/carstomize/dashboard-sidebar.png', 'title': 'Sidebar dashboard',
-             'description': 'Carstomize dashboard with a left sidebar, large map, and music controls.'},
+             'description': 'Carstomizer dashboard with a left sidebar, large map, and music controls.'},
             {'path': 'assets/carstomize/app-grid.png', 'title': 'App grid',
-             'description': 'Carstomize app grid with a purple wallpaper, custom dock, and bottom status bar.'},
+             'description': 'Carstomizer app grid with a purple wallpaper, custom dock, and bottom status bar.'},
             {'path': 'assets/carstomize/dashboard-cards.png', 'title': 'Dashboard cards',
-             'description': 'Carstomize dashboard with destination and music cards beside a large map.'},
+             'description': 'Carstomizer dashboard with destination and music cards beside a large map.'},
             {'path': 'assets/carstomize/wallpaper-catalog.png', 'title': 'Wallpaper catalog',
              'description': 'Custom wallpaper pairs above Apple wallpapers in the CarPlay wallpaper catalog.'}
         ] if is_carstomize else [])
@@ -197,7 +200,7 @@ def main():
         gallery_html = ''
         if screenshots:
             cards = ''.join(f'<figure><a href="/{shot["path"]}" target="_blank" rel="noopener" aria-label="Open {escape(shot["title"])} screenshot"><img src="/{shot["path"]}" alt="{escape(shot["description"])}" width="1280" height="800" loading="lazy"></a><figcaption>{escape(shot["title"])}</figcaption></figure>' for shot in screenshots)
-            gallery_html = f'<section class="screenshot-section" aria-label="Carstomize screenshots"><h2>Screenshots</h2><div class="screenshot-gallery">{cards}</div></section>'
+            gallery_html = f'<section class="screenshot-section" aria-label="Carstomizer screenshots"><h2>Screenshots</h2><div class="screenshot-gallery">{cards}</div></section>'
         content = f''' <a class="back" href="/">← All packages</a>
         <div class="project-heading"><img class="project-icon" src="/{record['icon']}" alt="" width="96" height="96"><div><p class="eyebrow">{escape(fields.get('Section', 'Package'))}</p><h1>{escape(fields['Name'])}</h1><div class="project-badges"><span>v{escape(fields['Version'])}</span><span>{escape(record['compatibility'])}</span></div></div></div>
         <p class="project-summary">{escape(summary)}</p>

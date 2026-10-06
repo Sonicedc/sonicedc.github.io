@@ -69,6 +69,9 @@ def main():
         original = ROOT / 'packages' / target.name
         assert payload == original.read_bytes(), 'Package bytes changed'
         original_fields = parse_control(control_from_deb(original))
+        if original_fields['Package'] in ('local.carstomize', 'com.sonicedc.carstomize'):
+            original_fields['Name'] = 'Carstomizer'
+            original_fields['Description'] = 'Personalize your CarPlay experience.'
         for key, value in original_fields.items():
             if key not in ('Depiction', 'SileoDepiction', 'Icon', 'Filename', 'Size', 'MD5sum', 'SHA1', 'SHA256', 'SHA512'):
                 assert fields[key] == value, f'Changed package metadata: {key}'
