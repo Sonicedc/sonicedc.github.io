@@ -83,9 +83,10 @@ def main():
             assert path.exists()
         depiction = json.loads((OUT / fields['SileoDepiction'].removeprefix(BASE + '/')).read_text())
         assert depiction['class'] == 'DepictionTabView' and depiction['minVersion'] == '0.4'
-        assert depiction['headerImage'].endswith('/assets/sileo-header.png')
-        assert depiction['tintColor'] == '#BFA3F0'
-        assert depiction['backgroundColor'] == '#17131F'
+        is_tiktok = fields['Package'] == 'local.evans.tiktokblocker'
+        assert depiction['headerImage'].endswith('/assets/tiktok-annoyance-featured.png' if is_tiktok else '/assets/sileo-header.png')
+        assert depiction['tintColor'] == ('#25F4EE' if is_tiktok else '#BFA3F0')
+        assert depiction['backgroundColor'] == ('#101014' if is_tiktok else '#17131F')
         verify_native(depiction)
     icon = (OUT / 'CydiaIcon.png').read_bytes()
     assert icon[:8] == b'\x89PNG\r\n\x1a\n'

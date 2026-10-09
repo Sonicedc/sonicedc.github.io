@@ -14,6 +14,12 @@
       "title": "Importone",
       "package": "com.sonicedc.importone",
       "hideShadow": false
+    },
+    {
+      "title": "TikTok Annoyance",
+      "package": "local.evans.tiktokblocker",
+      "url": "https://sonicedc.github.io/assets/tiktok-annoyance-featured.png",
+      "hideShadow": false
     }
   ]
 }

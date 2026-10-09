@@ -83,6 +83,7 @@ def main():
             raise ValueError(f'Duplicate package/version/architecture: {identity}')
         seen.add(identity)
         package = fields['Package']
+        is_tiktok = package == 'local.evans.tiktokblocker'
         is_importone = package == 'com.sonicedc.importone'
         is_roothide = package == 'com.sonicedc.carstomize.roothide'
         is_carstomize = is_roothide or package in ('local.carstomize', 'com.sonicedc.carstomize')
@@ -106,13 +107,20 @@ def main():
             fields['Icon'] = f'{BASE}/assets/carstomize.png'
         if is_importone:
             fields['Icon'] = f'{BASE}/assets/importone.png'
+        if is_tiktok:
+            fields['Icon'] = f'{BASE}/assets/tiktok-annoyance.png'
         stanzas.append('\n'.join(f'{key}: {value}' for key, value in fields.items()))
         record = {key: fields[key] for key in ('Package', 'Name', 'Version', 'Architecture', 'Description', 'Depends', 'Filename', 'Size', 'SHA256', 'Depiction') if key in fields}
         record['path'] = f'depictions/{slug}/'
         record['icon'] = 'assets/carstomize.png' if is_carstomize else ('assets/importone.png' if is_importone else 'assets/repo-icon.png')
         record['compatibility'] = 'iOS 15+ · Roothide' if is_roothide else (('iOS 15+ · Rootless' if package == 'com.sonicedc.carstomize' else 'iOS 16.2 · Rootless') if is_carstomize else ('iOS 15+ · Rootless' if is_importone else fields['Architecture']))
+        if is_tiktok:
+            record['icon'] = 'assets/tiktok-annoyance.png'
+            record['compatibility'] = 'TikTok 47.1.0 · Dopamine rootless'
         records.append(record)
         source_url = 'https://github.com/Sonicedc/Carstomizer-Roothide' if is_roothide else 'https://github.com/sonicedc/Carstomizer' if is_carstomize else ('https://github.com/sonicedc/Importone' if is_importone else 'https://github.com/sonicedc/sonicedc.github.io')
+        if is_tiktok:
+            source_url = 'https://github.com/Sonicedc/TikTok-Annoyance'
         info = [('Version', fields['Version']), ('Package', package),
                 ('Architecture', fields['Architecture']),
                 ('Author', fields.get('Author', fields.get('Maintainer', 'sonicedc'))),
@@ -193,6 +201,11 @@ def main():
             'tintColor': '#BFA3F0', 'backgroundColor': '#17131F', 'tabs': [
                 {'class': 'DepictionStackView', 'tabname': 'About', 'views': about_views},
                 {'class': 'DepictionStackView', 'tabname': 'Information', 'views': information_views}]}
+        if is_tiktok:
+            depiction_json.update(headerImage=f'{BASE}/assets/tiktok-annoyance-featured.png', tintColor='#25F4EE', backgroundColor='#101014')
+            for view in about_views + information_views:
+                if 'tintColor' in view:
+                    view['tintColor'] = '#25F4EE'
         (depiction / 'sileo.json').write_text(json.dumps(depiction_json, indent=2) + '\n')
         details = ''.join(f'<div><dt>{escape(k)}</dt><dd>{escape(v)}</dd></div>' for k,v in info)
         features = ''.join(f'<section class="feature"><h3>{escape(title)}</h3>{depiction_html(body)}</section>' for title, body in sections)
@@ -207,6 +220,9 @@ def main():
         {gallery_html}
         <div class="project-layout"><div class="project-content"><h2 class="features-heading">Features</h2><div class="features-grid">{features or '<p>' + escape(summary) + '</p>'}</div>{note_html}</div>
         <aside class="project-information"><h2>Information</h2><dl>{details}</dl><a class="button primary" href="sileo://source/{BASE}/">Add to Sileo <span aria-hidden="true">↗</span></a><div class="project-links"><a href="{source_url}">Source code <span aria-hidden="true">↗</span></a><a href="{source_url}/issues">Report an issue <span aria-hidden="true">↗</span></a></div><details class="package-checksum"><summary>Package checksum</summary><p>SHA-256</p><code>{fields['SHA256']}</code></details></aside></div>'''
+        if is_tiktok:
+            content = '<img src="/assets/tiktok-annoyance-featured.png" alt="TikTok Annoyance: Your feed. Your controls." style="width:100%;border-radius:20px;margin-bottom:24px">' + content
+            content = '<style>:root{--accent:#25f4ee} .project-heading h1{color:#fff} .project-icon{border-radius:22px}</style>' + content
         template = (ROOT / 'site' / 'detail.html').read_text()
         (depiction / 'index.html').write_text(template.replace('{{SOURCE}}', source_url).replace('{{TITLE}}', escape(fields['Name'])).replace('{{CONTENT}}', content))
     if not records:
