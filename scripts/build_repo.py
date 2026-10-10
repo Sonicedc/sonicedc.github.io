@@ -85,7 +85,7 @@ def main():
         package = fields['Package']
         is_tiktok = package == 'local.evans.tiktokblocker'
         is_importone = package == 'com.sonicedc.importone'
-        is_roothide = package == 'com.sonicedc.carstomize.roothide'
+        is_roothide = package == 'com.sonicedc.carstomizer.roothide'
         is_carstomize = is_roothide or package in ('local.carstomize', 'com.sonicedc.carstomize')
         if is_carstomize and not is_roothide:
             fields['Name'] = 'Carstomizer'
